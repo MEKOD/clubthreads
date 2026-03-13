@@ -1,0 +1,46 @@
+{
+  "name": "underground-social",
+  "version": "1.0.0",
+  "description": "Underground, uncensored, friend-group-focused social media backend",
+  "license": "AGPL-3.0-only",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "logs:view": "node tools/log-viewer/server.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@fastify/jwt": "^7.2.0",
+    "@fastify/multipart": "^8.3.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/redis": "^6.1.1",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.38.4",
+    "fastify": "^4.29.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.1",
+    "satori": "^0.12.1",
+    "sharp": "^0.33.5",
+    "web-push": "^3.6.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@types/bcrypt": "^6.0.0",
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "@types/web-push": "^3.6.4",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

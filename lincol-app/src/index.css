@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand: #1d9bf0;
+  --color-brand-hover: #1a8cd8;
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-hover: var(--bg-hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-overlay: var(--overlay);
+  --color-overlay-dark: var(--overlay-dark);
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #faf9f5;
+  --bg-tertiary: #f1efe8;
+  --bg-hover: #f0f0f0;
+  --text-primary: #0f1419;
+  --text-secondary: #536471;
+  --text-muted: #8a857b;
+  --inverse-primary: #ffffff;
+  --border: #eff3f4;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --overlay: rgba(0, 0, 0, 0.4);
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+  --mobile-header-offset: 3.5rem;
+  --mobile-tabbar-offset: 5rem;
+  --viewport-height: 100svh;
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #16181c;
+  --bg-tertiary: #202327;
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  --text-primary: #e7e9ea;
+  --text-secondary: #8b98a5;
+  --text-muted: #71767b;
+  --inverse-primary: #000000;
+  --border: #1e2226;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(255, 255, 255, 0.1);
+  --overlay-dark: rgba(255, 255, 255, 0.2);
+
+  color-scheme: dark;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --viewport-height: 100dvh;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  min-height: var(--viewport-height);
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Base resets */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  min-height: 100%;
+  background-color: var(--bg-primary);
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+  scroll-padding-top: calc(var(--mobile-header-offset) + env(safe-area-inset-top) + 0.75rem);
+  scroll-padding-bottom: calc(var(--mobile-tabbar-offset) + env(safe-area-inset-bottom) + 0.75rem);
+}
+
+#root {
+  min-height: 100%;
+  min-height: var(--viewport-height);
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(17, 17, 17, 0.16);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.native-feed-card {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 280px;
+}
+
+.native-sheet-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: ct-view-fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: ct-view-fade-in;
+  }
+}
+
+@keyframes ct-view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.992);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ct-view-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.996);
+  }
+}

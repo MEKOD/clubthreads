@@ -1,0 +1,20 @@
+tunnel: <YOUR_TUNNEL_ID>
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # Route all traffic to the local Fastify app
+  - hostname: your-domain.com
+    service: http://app:3000
+    originRequest:
+      noTLSVerify: false
+      connectTimeout: 30s
+      tcpKeepAlive: 30s
+      # Pass real visitor IP to app (read as CF-Connecting-IP header)
+      httpHostHeader: your-domain.com
+
+  # API subdomain (optional, same backend)
+  - hostname: api.your-domain.com
+    service: http://app:3000
+
+  # Catch-all — must exist as the final rule
+  - service: http_status:404

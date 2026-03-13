@@ -1,0 +1,110 @@
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: underground_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-social}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-underground}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Performance tuning: override postgres.conf
+      - ./infra/postgres.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "5432:5432"         # Remove in production, access via internal network only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-social} -d ${POSTGRES_DB:-underground}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - underground_net
+
+  # ─── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: underground_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+        --save 900 1
+        --save 300 10
+        --save 60 10000
+        --appendonly no
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"         # Remove in production
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - underground_net
+
+  # ─── App ────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: underground_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-social}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-underground}?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    volumes:
+      - uploads:/app/uploads
+      - ./src/assets:/app/src/assets:ro   # fonts/images for Satori
+    ports:
+      - "3000:3000"
+      - "3100:3100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - underground_net
+
+  # ─── Cloudflare Tunnel ──────────────────────────────────────────────────────
+  # Exposes the app to the internet via Cloudflare Tunnel (no port 80/443 needed)
+  # To get your token: cloudflared tunnel create underground
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: underground_tunnel
+    restart: unless-stopped
+    command: tunnel run --token ${CF_TUNNEL_TOKEN}
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN}
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - underground_net
+
+# ─── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:
+
+# ─── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  underground_net:
+    driver: bridge

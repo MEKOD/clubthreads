@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backend Log Viewer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111a;
+      --panel: #0f1c28;
+      --panel-2: #122331;
+      --text: #d6e5f0;
+      --muted: #88a1b5;
+      --accent: #4dd4ac;
+      --warn: #ffb84d;
+      --error: #ff7272;
+      --border: rgba(214, 229, 240, 0.1);
+      --stdout: #d6e5f0;
+      --stderr: #ff9f7a;
+      --system: #86c5ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top, rgba(77, 212, 172, 0.18), transparent 24%),
+        linear-gradient(180deg, #09131c 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1200px, calc(100vw - 24px));
+      margin: 18px auto;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(15, 28, 40, 0.9);
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(18, 35, 49, 0.94);
+    }
+
+    .title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: rgba(7, 17, 26, 0.7);
+    }
+
+    .pill.live { color: var(--accent); }
+    .pill.warn { color: var(--warn); }
+    .pill.error { color: var(--error); }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(7, 17, 26, 0.72);
+      color: var(--text);
+      padding: 8px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:hover { border-color: rgba(214, 229, 240, 0.22); }
+    .log {
+      height: calc(100vh - 120px);
+      min-height: 480px;
+      overflow: auto;
+      padding: 14px 0;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 120px 74px 1fr;
+      gap: 12px;
+      padding: 3px 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+      font-size: 12px;
+    }
+
+    .row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .time { color: var(--muted); }
+    .src { color: var(--system); text-transform: uppercase; }
+    .src.stderr { color: var(--stderr); }
+    .src.system { color: var(--system); }
+    .msg.stdout { color: var(--stdout); }
+    .msg.stderr { color: var(--stderr); }
+    .msg.system { color: var(--system); }
+
+    @media (max-width: 720px) {
+      .row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+      .log { height: calc(100vh - 160px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="toolbar">
+      <div>
+        <div class="title">Backend Log Viewer</div>
+        <div class="meta">
+          <span id="status" class="pill">connecting</span>
+          <span id="command" class="pill">waiting for command</span>
+          <span id="count" class="pill">0 lines</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="toggle">Pause</button>
+        <button id="clear">Clear</button>
+        <button id="follow">Auto-scroll: on</button>
+      </div>
+    </header>
+    <section id="log" class="log"></section>
+  </main>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    const commandEl = document.getElementById("command");
+    const countEl = document.getElementById("count");
+    const toggleEl = document.getElementById("toggle");
+    const clearEl = document.getElementById("clear");
+    const followEl = document.getElementById("follow");
+
+    let paused = false;
+    let autoScroll = true;
+    let lineCount = 0;
+
+    function setStatus(text, mode) {
+      statusEl.textContent = text;
+      statusEl.className = `pill ${mode || ""}`.trim();
+    }
+
+    function formatTime(input) {
+      const date = new Date(input);
+      if (Number.isNaN(date.getTime())) return "--:--:--";
+      return date.toLocaleTimeString();
+    }
+
+    function appendRow(source, line, at) {
+      if (paused) return;
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="time">${formatTime(at)}</div>
+        <div class="src ${source}">${source}</div>
+        <div class="msg ${source}"></div>
+      `;
+      row.querySelector(".msg").textContent = line;
+      logEl.appendChild(row);
+
+      lineCount += 1;
+      countEl.textContent = `${lineCount} lines`;
+
+      while (logEl.children.length > 3000) {
+        logEl.removeChild(logEl.firstChild);
+      }
+
+      if (autoScroll) {
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    }
+
+    const events = new EventSource("/events");
+
+    events.addEventListener("open", () => {
+      setStatus("live", "live");
+    });
+
+    events.addEventListener("error", () => {
+      setStatus("disconnected", "error");
+    });
+
+    events.addEventListener("status", (event) => {
+      const data = JSON.parse(event.data);
+      commandEl.textContent = data.command || "no command";
+      if (data.status === "running") setStatus("live", "live");
+      if (data.status === "stopped") setStatus("stopped", "warn");
+      if (data.status === "error") setStatus("error", "error");
+    });
+
+    events.addEventListener("log", (event) => {
+      const data = JSON.parse(event.data);
+      appendRow(data.source, data.line, data.at);
+    });
+
+    events.addEventListener("system", (event) => {
+      const data = JSON.parse(event.data);
+      appendRow("system", data.message, data.at);
+    });
+
+    toggleEl.addEventListener("click", () => {
+      paused = !paused;
+      toggleEl.textContent = paused ? "Resume" : "Pause";
+      setStatus(paused ? "paused" : "live", paused ? "warn" : "live");
+    });
+
+    clearEl.addEventListener("click", () => {
+      logEl.innerHTML = "";
+      lineCount = 0;
+      countEl.textContent = "0 lines";
+    });
+
+    followEl.addEventListener("click", () => {
+      autoScroll = !autoScroll;
+      followEl.textContent = `Auto-scroll: ${autoScroll ? "on" : "off"}`;
+      if (autoScroll) {
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Club Threads favicon">
+  <defs>
+    <linearGradient id="clubThreadsAccent" x1="14" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#121417" />
+  <path
+    d="M21 18h19a4 4 0 0 1 0 8H29v6h8a4 4 0 0 1 0 8h-8v6h11a4 4 0 0 1 0 8H21a4 4 0 0 1-4-4V22a4 4 0 0 1 4-4Z"
+    fill="#FFF7ED"
+  />
+  <path
+    d="M43 18h-9a4 4 0 0 0 0 8h5v24a4 4 0 0 0 8 0V22a4 4 0 0 0-4-4Z"
+    fill="url(#clubThreadsAccent)"
+  />
+</svg>
